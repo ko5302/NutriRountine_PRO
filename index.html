@@ -3,8 +3,39 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NutriRoutine Pro - 로컬 저장 버전</title>
+    <title>NutriRoutine Pro - 스마트 영양제 루틴 & 최저가 쇼핑몰 연동</title>
+    <meta name="description" content="영양제별 최적 복용 시점, 재고 관리, iHerb/네이버/쿠팡 최저가 링크, 구글 캘린더 연동까지 한 번에!" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyADzuTZvvHHeWr1nmZJnZIu1Ld2urazNdk",
+            authDomain: "nutriroutine-pro.firebaseapp.com",
+            projectId: "nutriroutine-pro",
+            storageBucket: "nutriroutine-pro.firebasestorage.app",
+            messagingSenderId: "398592669014",
+            appId: "1:398592669014:web:9085edb3e657be2ce5d2f7",
+            measurementId: "G-KXLMPH6GL5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        window.fbAuth = auth;
+        window.fbDb = db;
+        window.fbProvider = provider;
+        window.signInWithPopup = signInWithPopup;
+        window.signOut = signOut;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+    </script>
 
     <style>
         :root {
@@ -16,83 +47,808 @@
             --text-main: #212529;
             --text-muted: #6c757d;
             --border-color: #dee2e6;
+            --warning-color: #fff3cd;
+            --warning-text: #856404;
+            --danger-color: #fee2e2;
+            --danger-text: #dc2626;
+            --google-blue: #4285f4;
+            --google-dark: #3367d6;
+            --info-bg: #e0f2fe;
+            --info-text: #0369a1;
+            --iherb-color: #4a7c59;
+            --iherb-dark: #32523b;
+            --naver-color: #03c75a;
+            --naver-dark: #029e4a;
+            --coupang-color: #3e7bff;
+            --coupang-dark: #1f5cd9;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', system-ui, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding-bottom: 60px; }
-        
-        header { background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem; text-align: center; }
-        .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); text-decoration: none; }
 
-        main { max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
-        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 2rem; }
-        
-        .input-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; }
-        input, select, textarea { width: 100%; padding: 0.7rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 1rem; }
-        button { width: 100%; padding: 0.8rem; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        
-        .routine-list { margin-top: 2rem; }
-        .routine-item { background: white; padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .delete-btn { background: none; color: #dc2626; border: none; cursor: pointer; padding: 0.5rem; }
+        .storage-promo-banner {
+            background-color: var(--info-bg); color: var(--info-text);
+            text-align: center; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 700;
+            border-bottom: 1px solid #bae6fd; display: flex; align-items: center; justify-content: center; gap: 0.8rem; flex-wrap: wrap;
+        }
+        .cloud-btn {
+            background-color: var(--google-blue); color: white; border: none; padding: 0.25rem 0.6rem;
+            border-radius: 4px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; width: auto; margin: 0;
+        }
+        .cloud-btn:hover { background-color: var(--google-dark); }
+        .cloud-btn.logout { background-color: #64748b; }
+
+        header { background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 0.8rem 1.5rem; position: sticky; top: 0; z-index: 100; }
+        .header-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.35rem; font-weight: 700; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+
+        .lang-select { padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background-color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; width: auto; min-width: 80px; }
+
+        main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
+        @media (min-width: 992px) { main { grid-template-columns: 380px 1fr; } }
+
+        .search-section { background-color: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); height: fit-content; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 0.2rem; }
+        h2 { font-size: 1.15rem; margin-bottom: 1rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.5rem; }
+        .input-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+        select, input, button { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 1rem; outline: none; }
+        select:focus, input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        .radio-tile-group { display: flex; gap: 0.5rem; }
+        .radio-tile-group label { flex: 1; text-align: center; background: #fff; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--text-main); font-size: 0.85rem; }
+        .radio-tile-group input[type="radio"] { display: none; }
+        .radio-tile-group input[type="radio"]:checked + label { background-color: var(--primary-light); border-color: var(--primary-color); color: var(--primary-dark); }
+
+        button { background-color: var(--primary-color); color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
+        button:hover { background-color: var(--primary-dark); }
+
+        .shop-btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .shop-btn {
+            flex: 1; min-width: 80px; padding: 0.4rem 0.6rem; border-radius: 6px; border: none;
+            font-weight: 700; font-size: 0.8rem; text-align: center; text-decoration: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+            transition: background 0.2s; color: white; cursor: pointer;
+        }
+        .shop-btn.iherb { background-color: var(--iherb-color); }
+        .shop-btn.iherb:hover { background-color: var(--iherb-dark); }
+        .shop-btn.naver { background-color: var(--naver-color); }
+        .shop-btn.naver:hover { background-color: var(--naver-dark); }
+        .shop-btn.coupang { background-color: var(--coupang-color); }
+        .shop-btn.coupang:hover { background-color: var(--coupang-dark); }
+        .shop-btn.disabled { background-color: var(--border-color); color: var(--text-muted); pointer-events: none; }
+
+        .brand-box { display: none; background-color: #f8f9fa; padding: 0.8rem; border-radius: 8px; border: 1px dashed var(--border-color); }
+        .recommendation-badge { font-size: 0.75rem; color: var(--primary-color); background-color: var(--primary-light); padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 0.25rem; width: fit-content; margin-top: 0.2rem; }
+
+        .timeline-section { display: flex; flex-direction: column; gap: 1.5rem; }
+        .timeline-slot { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .slot-header { display: flex; align-items: center; justify-content: space-between; font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-light); flex-wrap: wrap; gap: 0.5rem; }
+        .slot-title { display: flex; align-items: center; gap: 0.75rem; }
+        .slot-morning .slot-title { color: #d97706; }
+        .slot-noon .slot-title { color: #2563eb; }
+        .slot-evening .slot-title { color: #4b5563; }
+
+        .slot-calendar-btn { background-color: var(--google-blue); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .slot-calendar-btn.disabled { background-color: var(--border-color); color: var(--text-muted); pointer-events: none; }
+
+        .routine-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .routine-card { border: 1px solid var(--border-color); border-radius: 8px; background-color: #fafafa; overflow: hidden; transition: all 0.2s ease; }
+        .routine-card:hover { border-color: var(--primary-color); }
+        .routine-card.taken-today { background-color: #f1f5f9; border-color: var(--border-color); }
+
+        .card-main { padding: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .card-left-section { display: flex; align-items: center; gap: 1rem; flex: 1; }
+
+        .pill-toggle-container { width: 40px; height: 40px; position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pill-wrapper { position: relative; width: 24px; height: 24px; transition: all 0.4s ease; }
+        .pill-part { position: absolute; width: 24px; height: 12px; background-color: #34d399; border: 1px solid #059669; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .pill-top { top: 0; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom: none; transform-origin: bottom center; }
+        .pill-bottom { bottom: 0; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; border-top: none; background-color: #fca5a5; border-color: #dc2626; transform-origin: top center; }
+
+        .routine-card.taken-today .pill-wrapper { opacity: 0.45; transform: scale(0.9); }
+        .routine-card.taken-today .pill-top { transform: translateY(-5px) rotate(-15deg); background-color: #94a3b8; border-color: #64748b; }
+        .routine-card.taken-today .pill-bottom { transform: translateY(5px) rotate(15deg); background-color: #cbd5e1; border-color: #64748b; }
+
+        .routine-info { flex: 1; }
+        .routine-info h4 { font-size: 1rem; color: var(--text-main); display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+        .routine-card.taken-today h4 { text-decoration: line-through; color: var(--text-muted); }
+
+        .brand-badge { background-color: #f0fdf4; color: #166534; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600; border: 1px solid #bbf7d0; }
+        .badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.72rem; font-weight: 600; border-radius: 4px; }
+        .badge-food-before { background-color: #fee2e2; color: #dc2626; }
+        .badge-food-after { background-color: #dcfce7; color: #16a34a; }
+        .badge-stock-safe { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .badge-stock-warn { background-color: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+        .badge-stock-danger { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; animation: blinker 1.5s linear infinite; }
+
+        @keyframes blinker { 50% { opacity: 0.4; } }
+
+        .card-controls { display: flex; align-items: center; gap: 0.75rem; }
+        .toggle-icon { color: var(--text-muted); transition: transform 0.2s; padding: 0.5rem; }
+        .routine-card.active .toggle-icon { transform: rotate(180deg); }
+        .delete-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.5rem; font-size: 1rem; width: auto; }
+
+        .card-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease-out; background-color: #ffffff; }
+        .routine-card.active .card-detail { max-height: 400px; border-top: 1px solid var(--border-color); }
+        .detail-content { padding: 1rem; font-size: 0.85rem; color: #495057; display: flex; flex-direction: column; gap: 0.5rem; }
+
+        .empty-msg { color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 2rem 0; }
+
+        .alert-box { background-color: var(--warning-color); color: var(--warning-text); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; border: 1px solid #ffeeba; }
+        .alert-box.danger-alert { background-color: var(--danger-color); color: var(--danger-text); border-color: #fca5a5; }
+        .alert-flex { display: flex; align-items: center; gap: 0.75rem; }
+
+        @media (max-width: 991px) {
+            main { margin: 1rem auto; gap: 1.5rem; }
+            .search-section, .timeline-slot { padding: 1rem; border-radius: 8px; }
+            .slot-calendar-btn { width: 100%; justify-content: center; margin-top: 0.5rem; }
+            .card-main { padding: 0.75rem; }
+            .shop-btn-group { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
 
+    <div class="storage-promo-banner">
+        <span id="promo-text">⚠️ 현재 브라우저 저장소 모드입니다. 데이터를 클라우드에 영구 보존하세요.</span>
+        <button id="auth-cloud-btn" class="cloud-btn"><i class="fa-brands fa-google"></i> 구글 계정 동기화</button>
+    </div>
+
     <header>
-        <a href="#" class="logo"><i class="fa-solid fa-file-medical"></i> NutriRoutine Pro (Local)</a>
+        <div class="header-container">
+            <a href="#" class="logo" id="logo-text"><i class="fa-solid fa-file-medical"></i> 영양루틴 프로</a>
+            <select class="lang-select" id="lang-switcher">
+                <option value="ko" selected>KO</option>
+                <option value="en">EN</option>
+            </select>
+        </div>
     </header>
 
     <main>
-        <div class="card">
-            <div class="input-group">
-                <label>영양제 이름</label>
-                <input type="text" id="routine-name" placeholder="예: 종합비타민">
-            </div>
-            <button onclick="addRoutine()"><i class="fa-solid fa-plus"></i> 루틴 추가</button>
-        </div>
+        <section style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="search-section">
+                <h2 id="panel-title"><i class="fa-solid fa-sliders"></i> 커스텀 루틴 설정</h2>
 
-        <div class="routine-list" id="routine-list">
+                <div class="input-group">
+                    <label id="lbl-select-supp">1. 영양제 선택</label>
+                    <select id="supplement-select">
+                        <option value="" id="opt-default">-- 영양제를 선택하세요 --</option>
+                        <option value="종합비타민" data-time="morning" data-food="after"
+                            data-brands="Thorne_Research,Life_Extension,Centrum,Nature_Way"
+                            data-iherb="https://www.iherb.com/search?kw=Thorne+Research+Basic+Nutrients,https://www.iherb.com/search?kw=Life+Extension+Two+Per+Day,https://www.iherb.com/search?kw=Centrum,https://www.iherb.com/search?kw=Natures+Way+Alive"
+                            data-naver="https://search.shopping.naver.com/search/all?query=Thorne+Research+Basic+Nutrients,https://search.shopping.naver.com/search/all?query=Life+Extension+Two+Per+Day,https://search.shopping.naver.com/search/all?query=Centrum,https://search.shopping.naver.com/search/all?query=Natures+Way+Alive"
+                            data-coupang="https://www.coupang.com/np/search?q=Thorne+Research,https://www.coupang.com/np/search?q=Life+Extension,https://www.coupang.com/np/search?q=Centrum,https://www.coupang.com/np/search?q=Natures+Way"
+                            data-tip="비타민 B군 및 미네랄이 대사를 자극하므로 활기찬 하루의 시작을 위해 아침 혹은 점심 식후 복용이 베스트입니다." data-benefit="기초 영양 보충, 활력 및 면역 대사 올인원 케어">종합 비타민</option>
+
+                        <option value="비타민B군" data-time="morning" data-food="before"
+                            data-brands="Thorne_Research,Now_Foods,Jarrow_Formulas,Doctor_Best"
+                            data-iherb="https://www.iherb.com/search?kw=Thorne+Basic+B,https://www.iherb.com/search?kw=Now+Foods+Vitamin+B,https://www.iherb.com/search?kw=Jarrow+Formulas+B-Right,https://www.iherb.com/search?kw=Doctors+Best+Fully+Active+B"
+                            data-naver="https://search.shopping.naver.com/search/all?query=Thorne+Basic+B,https://search.shopping.naver.com/search/all?query=Now+Foods+Vitamin+B,https://search.shopping.naver.com/search/all?query=Jarrow+Formulas+B-Right,https://search.shopping.naver.com/search/all?query=Doctors+Best+Fully+Active+B"
+                            data-coupang="https://www.coupang.com/np/search?q=Thorne+Basic+B,https://www.coupang.com/np/search?q=Now+Foods+Vitamin+B,https://www.coupang.com/np/search?q=Jarrow+Formulas+B-Right,https://www.coupang.com/np/search?q=Doctors+Best+Fully+Active+B"
+                            data-tip="피로회복 비타민인 B군은 수용성이며 음식물이 있으면 흡수가 저해될 수 있어 아침 공복 복용 시 가장 효율적입니다." data-benefit="체내 에너지 생성, 세포 대사 활성화 및 피로 회복 도움">비타민 B 복합체</option>
+
+                        <option value="비타민C" data-time="noon" data-food="after"
+                            data-brands="Now_Foods,Solgar,Doctor_Best,California_Gold_Nutrition"
+                            data-iherb="https://www.iherb.com/search?kw=Now+Foods+Vitamin+C,https://www.iherb.com/search?kw=Solgar+Vitamin+C,https://www.iherb.com/search?kw=Doctors+Best+Vitamin+C,https://www.iherb.com/c/california-gold-nutrition-vitamin-c"
+                            data-naver="https://search.shopping.naver.com/search/all?query=Now+Foods+Vitamin+C,https://search.shopping.naver.com/search/all?query=Solgar+Vitamin+C,https://search.shopping.naver.com/search/all?query=Doctors+Best+Vitamin+C,https://search.shopping.naver.com/search/all?query=California+Gold+Nutrition+Vitamin+C"
+                            data-coupang="https://www.coupang.com/np/search?q=Now+Foods+Vitamin+C,https://www.coupang.com/np/search?q=Solgar+Vitamin+C,https://www.coupang.com/np/search?q=Doctors+Best+Vitamin+C,https://www.coupang.com/np/search?q=California+Gold+Nutrition+Vitamin+C"
+                            data-tip="강한 산성을 띠므로 공복 복용 시 위장 장애를 유발할 수 있습니다. 위산 분비가 활발한 식사 직후 섭취하세요." data-benefit="결합조직 형성 및 기능유지, 철분 흡수 촉진, 항산화 작용">비타민 C (메가도스 코어)</option>
+
+                        <option value="비타민D3" data-time="morning" data-food="after"
+                            data-brands="Solgar,Now_Foods,Doctor_Best,California_Gold_Nutrition"
+                            data-iherb="https://www.iherb.com/search?kw=Solgar+Vitamin+D3,https://www.iherb.com/search?kw=Now+Foods+Vitamin+D3,https://www.iherb.com/search?kw=Doctors+Best+Vitamin+D3,https://www.iherb.com/search?kw=CGN+Vitamin+D3"
+                            data-naver="https://search.shopping.naver.com/search/all?query=Solgar+Vitamin+D3,https://search.shopping.naver.com/search/all?query=Now+Foods+Vitamin+D3,https://search.shopping.naver.com/search/all?query=Doctors+Best+Vitamin+D3,https://search.shopping.naver.com/search/all?query=California+Gold+Nutrition+Vitamin+D3"
+                            data-coupang="https://www.coupang.com/np/search?q=Solgar+Vitamin+D3,https://www.coupang.com/np/search?q=Now+Foods+Vitamin+D3,https://www.coupang.com/np/search?q=Doctors+Best+Vitamin+D3,https://www.coupang.com/np/search?q=California+Gold+Nutrition+Vitamin+D3"
+                            data-tip="지용성이므로 식사 중 지방 성분과 만나야 흡수가 극대화됩니다. 수면 호르몬 제어 성향이 있어 낮 복용이 이상적입니다." data-benefit="칼슘과 인이 흡수되고 이용되는데 필요, 골다공증 예방">비타민 D3</option>
+
+                        <option value="오메가3" data-time="evening" data-food="after"
+                            data-brands="Sports_Research,Nordic_Naturals,Now_Foods"
+                            data-iherb="https://www.iherb.com/search?kw=Sports+Research+Omega+3,https://www.iherb.com/search?kw=Nordic+Naturals+Omega+3,https://www.iherb.com/search?kw=Now+Foods+Omega+3"
+                            data-naver="https://search.shopping.naver.com/search/all?query=Sports+Research+Omega+3,https://search.shopping.naver.com/search/all?query=Nordic+Naturals+Omega+3,https://search.shopping.naver.com/search/all?query=Now+Foods+Omega+3"
+                            data-coupang="https://www.coupang.com/np/search?q=Sports+Research+Omega+3,https://www.coupang.com/np/search?q=Nordic+Naturals+Omega+3,https://www.coupang.com/np/search?q=Now+Foods+Omega+3"
+                            data-tip="생선 기름 기반 지용성 성분으로, 담즙산 분비가 가장 활발한 '하루 중 가장 기름진 식사 직후' 복용하는 것이 정석입니다." data-benefit="혈행 개선, 혈중 중성지질 개선, 건조한 눈 개선에 도움">오메가-3 (rTG형 고함량)</option>
+
+                        <option value="유산균" data-time="morning" data-food="before"
+                            data-brands="Jarrow_Formulas,Garden_of_Life,California_Gold_Nutrition"
+                            data-iherb="https://www.iherb.com/search?kw=Jarrow+Probiotics,https://www.iherb.com/search?kw=Garden+of+Life+Probiotics,https://www.iherb.com/search?kw=CGN+Lactobif"
+                            data-naver="https://search.shopping.naver.com/search/all?query=Jarrow+Probiotics,https://search.shopping.naver.com/search/all?query=Garden+of+Life+Probiotics,https://search.shopping.naver.com/search/all?query=CGN+Lactobif"
+                            data-coupang="https://www.coupang.com/np/search?q=Jarrow+Probiotics,https://www.coupang.com/np/search?q=Garden+of+Life+Probiotics,https://www.coupang.com/np/search?q=CGN+Lactobif"
+                            data-tip="강한 위산에 균주가 사멸하는 것을 막기 위해 위산이 중화되어 있는 '아침 기상 직후 공복' 상태에서 물을 많이 마시며 복용하세요." data-benefit="장내 유해균 억제 및 유산균 증식, 원활한 배변 활동">프로바이오틱스 유산균</option>
+
+                        <option value="마그네슘" data-time="evening" data-food="after"
+                            data-brands="Bluebonnet_Nutrition,Doctor_Best,Now_Foods"
+                            data-iherb="https://www.iherb.com/search?kw=Bluebonnet+Magnesium,https://www.iherb.com/search?kw=Doctors+Best+Magnesium,https://www.iherb.com/search?kw=Now+Foods+Magnesium"
+                            data-naver="https://search.shopping.naver.com/search/all?query=Bluebonnet+Magnesium,https://search.shopping.naver.com/search/all?query=Doctors+Best+Magnesium,https://search.shopping.naver.com/search/all?query=Now+Foods+Magnesium"
+                            data-coupang="https://www.coupang.com/np/search?q=Bluebonnet+Magnesium,https://www.coupang.com/np/search?q=Doctors+Best+Magnesium,https://www.coupang.com/np/search?q=Now+Foods+Magnesium"
+                            data-tip="신경을 안정시키고 근육을 이완시켜 주는 천연 완화제이므로, 저녁 식후나 수면 1시간 전 복용 시 수면 질 향상에 도움을 줍니다." data-benefit="에너지 이용에 필요, 신경 및 근육 기능 유지">마그네슘</option>
+                    </select>
+                    <div id="recommend-guide-box"></div>
+                </div>
+
+                <div class="input-group brand-box" id="brand-container">
+                    <label id="lbl-brand-space">1-1. 브랜드 선택 및 쇼핑몰 바로가기</label>
+                    <select id="brand-select" style="margin-bottom: 0.5rem;"></select>
+                    <div id="shop-btn-group" class="shop-btn-group" style="display:none;"></div>
+                    <input type="text" id="brand-custom" placeholder="원하는 브랜드 직접 입력 (쇼핑몰 링크 미제공)">
+                </div>
+
+                <div class="input-group">
+                    <label id="lbl-custom-reg">목록에 없는 영양제 직접 등록</label>
+                    <input type="text" id="custom-name" placeholder="예: 아르기닌, 밀크씨슬 등">
+                </div>
+
+                <div class="input-group">
+                    <label id="lbl-stock-count">초기 보유 수량 (알/Capsules)</label>
+                    <input type="number" id="initial-stock" placeholder="예: 60" min="1" value="60">
+                </div>
+
+                <div class="input-group">
+                    <label id="lbl-time-set">2. 복용 시간 세팅</label>
+                    <div class="radio-tile-group">
+                        <input type="radio" id="time-morning" name="routine-time" value="morning" checked>
+                        <label for="time-morning" id="lbl-m">아침 (08:00)</label>
+                        <input type="radio" id="time-noon" name="routine-time" value="noon">
+                        <label for="time-noon" id="lbl-n">점심 (13:00)</label>
+                        <input type="radio" id="time-evening" name="routine-time" value="evening">
+                        <label for="time-evening" id="lbl-e">저녁 (20:00)</label>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label id="lbl-food-cond">3. 식사 조건 매칭</label>
+                    <div class="radio-tile-group">
+                        <input type="radio" id="food-before" name="routine-food" value="before">
+                        <label for="food-before" id="lbl-fb">식전 공복</label>
+                        <input type="radio" id="food-after" name="routine-food" value="after" checked>
+                        <label for="food-after" id="lbl-fa">식후 즉시</label>
+                    </div>
+                </div>
+
+                <button id="add-btn"><i class="fa-solid fa-square-plus"></i> 내 맞춤 루틴에 적재</button>
             </div>
+        </section>
+
+        <section class="timeline-section">
+            <div class="alert-box" id="interaction-alert">
+                <div class="alert-flex">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.2rem;"></i>
+                    <div id="alert-text"></div>
+                </div>
+                <div id="alert-affiliate-zone" style="margin-top:0.5rem; display:none;"></div>
+            </div>
+
+            <div class="timeline-slot slot-morning">
+                <div class="slot-header">
+                    <div class="slot-title" id="title-m"><i class="fa-solid fa-sun"></i> 아침 루틴 (07:00 ~ 09:00)</div>
+                    <a href="#" id="cal-btn-morning" class="slot-calendar-btn disabled" target="_blank"><i class="fa-brands fa-google"></i> 아침 루틴 등록</a>
+                </div>
+                <div class="routine-list" id="list-morning"><div class="empty-msg">지정된 일정이 없습니다.</div></div>
+            </div>
+
+            <div class="timeline-slot slot-noon">
+                <div class="slot-header">
+                    <div class="slot-title" id="title-n"><i class="fa-solid fa-cloud-sun"></i> 점심 루틴 (12:00 ~ 14:00)</div>
+                    <a href="#" id="cal-btn-noon" class="slot-calendar-btn disabled" target="_blank"><i class="fa-brands fa-google"></i> 점심 루틴 등록</a>
+                </div>
+                <div class="routine-list" id="list-noon"><div class="empty-msg">지정된 일정이 없습니다.</div></div>
+            </div>
+
+            <div class="timeline-slot slot-evening">
+                <div class="slot-header">
+                    <div class="slot-title" id="title-e"><i class="fa-solid fa-moon"></i> 저녁 루틴 (19:00 ~ 21:00)</div>
+                    <a href="#" id="cal-btn-evening" class="slot-calendar-btn disabled" target="_blank"><i class="fa-brands fa-google"></i> 저녁 루틴 등록</a>
+                </div>
+                <div class="routine-list" id="list-evening"><div class="empty-msg">지정된 일정이 없습니다.</div></div>
+            </div>
+        </section>
     </main>
 
-    <footer style="text-align:center; padding:20px; font-size:0.8rem; color:#6c757d;">
-        <p>본 서비스는 모든 데이터를 사용자 기기(브라우저)에만 저장하며, 개인정보를 수집하지 않습니다.</p>
-    </footer>
-
     <script>
-        let routines = JSON.parse(localStorage.getItem('myRoutines')) || [];
+        const i18n = {
+            ko: {
+                logoText: "<i class='fa-solid fa-file-medical'></i> 영양루틴 프로",
+                panelTitle: "<i class='fa-solid fa-sliders'></i> 커스텀 루틴 설정",
+                lblSelectSupp: "1. 영양제 선택", optDefault: "-- 영양제를 선택하세요 --",
+                lblBrandSpace: "1-1. 브랜드 선택 및 쇼핑몰 바로가기", lblCustomReg: "목록에 없는 영양제 직접 등록",
+                lblStockCount: "초기 보유 수량 (알/Capsules)", lblTimeSet: "2. 복용 시간 세팅", lblFoodCond: "3. 식사 조건 매칭",
+                btnM: "아침 (08:00)", btnN: "점심 (13:00)", btnE: "저녁 (20:00)", btnFb: "식전 공복", btnFa: "식후 즉시",
+                btnAdd: "<i class='fa-solid fa-square-plus'></i> 내 맞춤 루틴에 적재",
+                titleM: "<i class='fa-solid fa-sun'></i> 아침 루틴 (07:00 ~ 09:00)", titleN: "<i class='fa-solid fa-cloud-sun'></i> 점심 루틴 (12:00 ~ 14:00)", titleE: "<i class='fa-solid fa-moon'></i> 저녁 루틴 (19:00 ~ 21:00)",
+                btnCalM: "<i class='fa-brands fa-google'></i> 아침 루틴 등록", btnCalN: "<i class='fa-brands fa-google'></i> 점심 루틴 등록", btnCalE: "<i class='fa-brands fa-google'></i> 저녁 루틴 등록",
+                empty: "지정된 일정이 없습니다.", recommend: "권장 최적 시점 자동 적용됨", benefitLbl: "성분 기능성", tipLbl: "전문가 요령",
+                alertDuplicate: "이미 동일 타임라인에 등록 완료된 동일 영양제가 존재합니다.", alertInput: "영양제 대상을 선택 혹은 직접 작성 완료해 주십시오.",
+                stockSafe: "보유 수량", stockWarn: "소진 임박", stockDanger: "재구매 알림",
+                reorderMsg: "[재구매 경고] 보유 수량이 7알 이하인 영양제가 있습니다. 아래 쇼핑몰에서 빠르게 구매하세요.",
+                confirmDelete: "정말 삭제하시겠습니까?"
+            },
+            en: {
+                logoText: "<i class='fa-solid fa-file-medical'></i> NutriRoutine Pro",
+                panelTitle: "<i class='fa-solid fa-sliders'></i> Custom Routine Setup",
+                lblSelectSupp: "1. Select Supplement", optDefault: "-- Select a supplement --",
+                lblBrandSpace: "1-1. Brand & Shopping Mall", lblCustomReg: "Direct Registration",
+                lblStockCount: "Current Stock (Pills)", lblTimeSet: "2. Set Intake Time", lblFoodCond: "3. Meal Condition",
+                btnM: "Morning (08:00)", btnN: "Noon (13:00)", btnE: "Evening (20:00)", btnFb: "Before Meals", btnFa: "After Meals",
+                btnAdd: "<i class='fa-solid fa-square-plus'></i> Add to Routine",
+                titleM: "<i class='fa-solid fa-sun'></i> Morning Routine (07:00 ~ 09:00)", titleN: "<i class='fa-solid fa-cloud-sun'></i> Noon Routine (12:00 ~ 14:00)", titleE: "<i class='fa-solid fa-moon'></i> Evening Routine (19:00 ~ 21:00)",
+                btnCalM: "<i class='fa-brands fa-google'></i> Add Morning", btnCalN: "<i class='fa-brands fa-google'></i> Add Noon", btnCalE: "<i class='fa-brands fa-google'></i> Add Evening",
+                empty: "No schedules assigned.", recommend: "Recommended Timing Auto-Applied", benefitLbl: "Benefits", tipLbl: "Expert Tips",
+                alertDuplicate: "Duplicate supplement in same timeline.", alertInput: "Please select or enter supplement.",
+                stockSafe: "Stock Qty", stockWarn: "Low Stock", stockDanger: "Reorder",
+                reorderMsg: "[Reorder Alert] Some items have 7 or fewer pills left. Buy now!",
+                confirmDelete: "Are you sure you want to delete this item?"
+            }
+        };
 
-        function render() {
-            const list = document.getElementById('routine-list');
-            list.innerHTML = '';
-            routines.forEach((item, index) => {
-                list.innerHTML += `
-                    <div class="routine-item">
-                        <span>${item}</span>
-                        <button class="delete-btn" onclick="deleteRoutine(${index})"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
-            });
+        let currentLang = 'ko';
+        let myRoutine = [];
+        let currentUser = null;
+
+        const selectEl = document.getElementById('supplement-select');
+        const brandBox = document.getElementById('brand-container');
+        const brandSelect = document.getElementById('brand-select');
+        const brandCustom = document.getElementById('brand-custom');
+        const customInput = document.getElementById('custom-name');
+        const stockInput = document.getElementById('initial-stock');
+        const addBtn = document.getElementById('add-btn');
+        const guideBox = document.getElementById('recommend-guide-box');
+        const langSwitcher = document.getElementById('lang-switcher');
+        const authCloudBtn = document.getElementById('auth-cloud-btn');
+        const promoText = document.getElementById('promo-text');
+        const shopBtnGroup = document.getElementById('shop-btn-group');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebaseAndAuth();
+            checkAndResetDailyChecks();
+            applyLanguage();
+            updateUI();
+        });
+
+        function initFirebaseAndAuth() {
+            setTimeout(() => {
+                if (window.fbAuth) {
+                    window.fbAuth.onAuthStateChanged(async (user) => {
+                        if (user) {
+                            currentUser = user;
+                            authCloudBtn.innerText = "로그아웃";
+                            authCloudBtn.classList.add('logout');
+                            promoText.innerHTML = `🟢 클라우드 동기화 완료 (${user.displayName || user.email})`;
+                            await syncFromFirebase();
+                        } else {
+                            currentUser = null;
+                            authCloudBtn.innerHTML = `<i class="fa-brands fa-google"></i> 구글 계정 동기화`;
+                            authCloudBtn.classList.remove('logout');
+                            promoText.innerText = "⚠️ 현재 브라우저 저장소 모드입니다. 데이터를 클라우드에 영구 보존하세요.";
+                            loadLocalStorageData();
+                        }
+                        updateUI();
+                    });
+                } else {
+                    loadLocalStorageData();
+                    updateUI();
+                }
+            }, 500);
         }
 
-        function addRoutine() {
-            const input = document.getElementById('routine-name');
-            if (input.value.trim()) {
-                routines.push(input.value);
-                localStorage.setItem('myRoutines', JSON.stringify(routines));
-                input.value = '';
-                render();
+        authCloudBtn.addEventListener('click', async () => {
+            if (!window.fbAuth) return;
+            if (currentUser) {
+                await window.signOut(window.fbAuth);
+                myRoutine = [];
+                localStorage.removeItem('myRoutineData');
+            } else {
+                try {
+                    await window.signInWithPopup(window.fbAuth, window.fbProvider);
+                } catch (error) {
+                    console.error("Auth Error:", error);
+                }
+            }
+        });
+
+        async function syncToFirebase() {
+            if (currentUser && window.fbDb) {
+                const docRef = window.doc(window.fbDb, "users", currentUser.uid);
+                await window.setDoc(docRef, { routine: myRoutine }, { merge: true });
             }
         }
 
-        function deleteRoutine(index) {
-            routines.splice(index, 1);
-            localStorage.setItem('myRoutines', JSON.stringify(routines));
-            render();
+        async function syncFromFirebase() {
+            if (currentUser && window.fbDb) {
+                const docRef = window.doc(window.fbDb, "users", currentUser.uid);
+                const docSnap = await window.getDoc(docRef);
+                if (docSnap.exists() && docSnap.data().routine) {
+                    myRoutine = docSnap.data().routine;
+                } else {
+                    loadLocalStorageData();
+                    if (myRoutine.length > 0) await syncToFirebase();
+                }
+            }
         }
 
-        render();
+        langSwitcher.addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            applyLanguage();
+            updateUI();
+        });
+
+        function applyLanguage() {
+            const data = i18n[currentLang];
+            document.getElementById('logo-text').innerHTML = data.logoText;
+            document.getElementById('panel-title').innerHTML = data.panelTitle;
+            document.getElementById('lbl-select-supp').innerText = data.lblSelectSupp;
+            document.getElementById('opt-default').innerText = data.optDefault;
+            document.getElementById('lbl-brand-space').innerText = data.lblBrandSpace;
+            document.getElementById('lbl-custom-reg').innerText = data.lblCustomReg;
+            document.getElementById('lbl-stock-count').innerText = data.lblStockCount;
+            document.getElementById('lbl-time-set').innerText = data.lblTimeSet;
+            document.getElementById('lbl-food-cond').innerText = data.lblFoodCond;
+            document.getElementById('lbl-m').innerText = data.btnM;
+            document.getElementById('lbl-n').innerText = data.btnN;
+            document.getElementById('lbl-e').innerText = data.btnE;
+            document.getElementById('lbl-fb').innerText = data.btnFb;
+            document.getElementById('lbl-fa').innerText = data.btnFa;
+            document.getElementById('add-btn').innerHTML = data.btnAdd;
+            document.getElementById('title-m').innerHTML = data.titleM;
+            document.getElementById('title-n').innerHTML = data.titleN;
+            document.getElementById('title-e').innerHTML = data.titleE;
+            document.getElementById('cal-btn-morning').innerHTML = data.btnCalM;
+            document.getElementById('cal-btn-noon').innerHTML = data.btnCalN;
+            document.getElementById('cal-btn-evening').innerHTML = data.btnCalE;
+        }
+
+        selectEl.addEventListener('change', () => {
+            if (selectEl.value !== "") {
+                customInput.value = "";
+                customInput.disabled = true;
+                customInput.style.backgroundColor = "#e9ecef";
+
+                const opt = selectEl.options[selectEl.selectedIndex];
+                const recTime = opt.getAttribute('data-time');
+                const recFood = opt.getAttribute('data-food');
+                const brandsStr = opt.getAttribute('data-brands');
+                const iherbLinks = opt.getAttribute('data-iherb') || '';
+                const naverLinks = opt.getAttribute('data-naver') || '';
+                const coupangLinks = opt.getAttribute('data-coupang') || '';
+
+                document.getElementById(`time-${recTime}`).checked = true;
+                document.getElementById(`food-${recFood}`).checked = true;
+                guideBox.innerHTML = `<div class="recommendation-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> ${i18n[currentLang].recommend}</div>`;
+
+                if (brandsStr) {
+                    const brands = brandsStr.split(',');
+                    const iherbArr = iherbLinks.split(',');
+                    const naverArr = naverLinks.split(',');
+                    const coupangArr = coupangLinks.split(',');
+
+                    brandSelect.innerHTML = `<option value="">-- 브랜드를 선택하세요 --</option>`;
+                    brands.forEach((b, idx) => {
+                        const cleanName = b.replace(/_/g, ' ');
+                        brandSelect.innerHTML += `
+                            <option value="${cleanName}" 
+                                    data-iherb="${iherbArr[idx] || '#'}" 
+                                    data-naver="${naverArr[idx] || '#'}" 
+                                    data-coupang="${coupangArr[idx] || '#'}">
+                                ${cleanName}
+                            </option>`;
+                    });
+                    brandBox.style.display = 'block';
+                    shopBtnGroup.style.display = 'none';
+                } else {
+                    brandBox.style.display = 'none';
+                }
+            } else {
+                customInput.disabled = false;
+                customInput.style.backgroundColor = "#ffffff";
+                brandBox.style.display = 'none';
+                shopBtnGroup.style.display = 'none';
+                guideBox.innerHTML = '';
+            }
+        });
+
+        brandSelect.addEventListener('change', () => {
+            const selectedOpt = brandSelect.options[brandSelect.selectedIndex];
+            if (brandSelect.value !== "" && selectedOpt) {
+                brandCustom.value = "";
+                const iUrl = selectedOpt.getAttribute('data-iherb') || '#';
+                const nUrl = selectedOpt.getAttribute('data-naver') || '#';
+                const cUrl = selectedOpt.getAttribute('data-coupang') || '#';
+
+                shopBtnGroup.innerHTML = `
+                    <a href="${iUrl}" target="_blank" rel="noopener noreferrer" class="shop-btn iherb ${iUrl === '#' ? 'disabled' : ''}"><i class="fa-solid fa-leaf"></i> iHerb</a>
+                    <a href="${nUrl}" target="_blank" rel="noopener noreferrer" class="shop-btn naver ${nUrl === '#' ? 'disabled' : ''}"><i class="fa-brands fa-naver"></i> 네이버</a>
+                    <a href="${cUrl}" target="_blank" rel="noopener noreferrer" class="shop-btn coupang ${cUrl === '#' ? 'disabled' : ''}"><i class="fa-solid fa-cart-shopping"></i> 쿠팡</a>
+                `;
+                shopBtnGroup.style.display = 'flex';
+            } else {
+                shopBtnGroup.style.display = 'none';
+            }
+        });
+
+        brandCustom.addEventListener('input', () => {
+            if (brandCustom.value.trim() !== "") {
+                brandSelect.value = "";
+                shopBtnGroup.style.display = 'none';
+            }
+        });
+
+        addBtn.addEventListener('click', async () => {
+            let name = "", brand = "", iherbUrl = "", naverUrl = "", coupangUrl = "";
+            let tip = "식사 직후 충분한 물과 함께 복용하세요.", benefit = "종합 건강 관리";
+            let time = document.querySelector('input[name="routine-time"]:checked').value;
+            let food = document.querySelector('input[name="routine-food"]:checked').value;
+            let stock = parseInt(stockInput.value) || 60;
+
+            if (brandSelect.value !== "") {
+                brand = brandSelect.value;
+                const opt = brandSelect.options[brandSelect.selectedIndex];
+                iherbUrl = opt.getAttribute('data-iherb') || "";
+                naverUrl = opt.getAttribute('data-naver') || "";
+                coupangUrl = opt.getAttribute('data-coupang') || "";
+            } else if (brandCustom.value.trim() !== "") {
+                brand = brandCustom.value.trim();
+            }
+
+            if (selectEl.value !== "") {
+                const opt = selectEl.options[selectEl.selectedIndex];
+                name = currentLang === 'ko' ? opt.text : opt.value;
+                tip = opt.getAttribute('data-tip');
+                benefit = opt.getAttribute('data-benefit');
+            } else if (customInput.value.trim() !== "") {
+                name = customInput.value.trim();
+            } else {
+                alert(i18n[currentLang].alertInput);
+                return;
+            }
+
+            if (myRoutine.some(item => item.name === name && item.time === time)) {
+                alert(i18n[currentLang].alertDuplicate);
+                return;
+            }
+
+            const newItem = {
+                id: Date.now(),
+                name,
+                brand,
+                time,
+                food,
+                tip,
+                benefit,
+                stock,
+                iherbUrl,
+                naverUrl,
+                coupangUrl,
+                takenToday: false,
+                active: false
+            };
+            myRoutine.push(newItem);
+
+            saveLocalStorageData();
+            await syncToFirebase();
+            updateUI();
+
+            selectEl.value = "";
+            customInput.value = "";
+            customInput.disabled = false;
+            customInput.style.backgroundColor = "#ffffff";
+            brandBox.style.display = 'none';
+            brandSelect.innerHTML = "";
+            brandCustom.value = "";
+            stockInput.value = "60";
+            guideBox.innerHTML = '';
+            shopBtnGroup.style.display = 'none';
+        });
+
+        window.deleteItem = async function(id, event) {
+            event.stopPropagation();
+            if (!confirm(i18n[currentLang].confirmDelete)) return;
+            myRoutine = myRoutine.filter(item => item.id !== id);
+            saveLocalStorageData();
+            await syncToFirebase();
+            updateUI();
+        };
+
+        window.toggleCard = function(id) {
+            myRoutine = myRoutine.map(item =>
+                item.id === id ? { ...item, active: !item.active } : item
+            );
+            updateUI();
+        };
+
+        window.toggleTakeComplete = async function(id, event) {
+            event.stopPropagation();
+            myRoutine = myRoutine.map(item => {
+                if (item.id === id) {
+                    const isChecking = !item.takenToday;
+                    let newStock = isChecking ? Math.max(0, item.stock - 1) : item.stock + 1;
+                    return { ...item, takenToday: isChecking, stock: newStock };
+                }
+                return item;
+            });
+            saveLocalStorageData();
+            await syncToFirebase();
+            updateUI();
+        };
+
+        function updateUI() {
+            const slots = {
+                morning: document.getElementById('list-morning'),
+                noon: document.getElementById('list-noon'),
+                evening: document.getElementById('list-evening')
+            };
+
+            Object.keys(slots).forEach(key => slots[key].innerHTML = "");
+
+            myRoutine.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `routine-card ${item.active ? 'active' : ''} ${item.takenToday ? 'taken-today' : ''}`;
+
+                const foodBadgeHtml = item.food === 'before'
+                    ? `<span class="badge badge-food-before"><i class="fa-solid fa-droplet-slash"></i> 식전 공복</span>`
+                    : `<span class="badge badge-food-after"><i class="fa-solid fa-utensils"></i> 식후 즉시</span>`;
+
+                const brandHtml = item.brand ? `<span class="brand-badge">${item.brand}</span>` : '';
+
+                let stockBadgeClass = "badge-stock-safe";
+                let stockStatusText = i18n[currentLang].stockSafe;
+                if (item.stock <= 7) {
+                    stockBadgeClass = "badge-stock-danger";
+                    stockStatusText = i18n[currentLang].stockDanger;
+                } else if (item.stock <= 14) {
+                    stockBadgeClass = "badge-stock-warn";
+                    stockStatusText = i18n[currentLang].stockWarn;
+                }
+
+                const stockBadgeHtml = `<span class="badge ${stockBadgeClass}"><i class="fa-solid fa-box-archive"></i> ${stockStatusText}: ${item.stock}알</span>`;
+
+                let innerShopButtons = "";
+                if (item.iherbUrl && item.iherbUrl !== '#') {
+                    innerShopButtons += `<a href="${item.iherbUrl}" target="_blank" rel="noopener noreferrer" class="shop-btn iherb" style="padding:0.4rem 0.6rem; font-size:0.75rem; width:auto; display:inline-flex;"><i class="fa-solid fa-leaf"></i> iHerb</a>`;
+                }
+                if (item.naverUrl && item.naverUrl !== '#') {
+                    innerShopButtons += `<a href="${item.naverUrl}" target="_blank" rel="noopener noreferrer" class="shop-btn naver" style="padding:0.4rem 0.6rem; font-size:0.75rem; width:auto; display:inline-flex;"><i class="fa-brands fa-naver"></i> 네이버</a>`;
+                }
+                if (item.coupangUrl && item.coupangUrl !== '#') {
+                    innerShopButtons += `<a href="${item.coupangUrl}" target="_blank" rel="noopener noreferrer" class="shop-btn coupang" style="padding:0.4rem 0.6rem; font-size:0.75rem; width:auto; display:inline-flex;"><i class="fa-solid fa-cart-shopping"></i> 쿠팡</a>`;
+                }
+
+                const shopContainerHtml = innerShopButtons !== "" 
+                    ? `<div class="shop-btn-group" style="margin-top: 0.8rem; display: flex; gap: 0.4rem; width: 100%; flex-direction: row;">${innerShopButtons}</div>` 
+                    : "";
+
+                card.innerHTML = `
+                    <div class="card-main" onclick="toggleCard(${item.id})">
+                        <div class="card-left-section">
+                            <div class="pill-toggle-container" onclick="toggleTakeComplete(${item.id}, event)">
+                                <div class="pill-wrapper">
+                                    <div class="pill-part pill-top"></div>
+                                    <div class="pill-part pill-bottom"></div>
+                                </div>
+                            </div>
+                            <div class="routine-info">
+                                <h4>${brandHtml} ${item.name} ${foodBadgeHtml} ${stockBadgeHtml}</h4>
+                            </div>
+                        </div>
+                        <div class="card-controls">
+                            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                            <button class="delete-btn" onclick="deleteItem(${item.id}, event)"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-detail">
+                        <div class="detail-content">
+                            <p><strong><i class="fa-solid fa-star" style="color:#eab308;"></i> ${i18n[currentLang].benefitLbl}:</strong> ${item.benefit}</p>
+                            <p><strong><i class="fa-solid fa-circle-exclamation" style="color:var(--primary-color)"></i> ${i18n[currentLang].tipLbl}:</strong> ${item.tip}</p>
+                            ${shopContainerHtml}
+                        </div>
+                    </div>
+                `;
+                slots[item.time].appendChild(card);
+            });
+
+            Object.keys(slots).forEach(key => {
+                if (slots[key].children.length === 0) {
+                    slots[key].innerHTML = `<div class="empty-msg">${i18n[currentLang].empty}</div>`;
+                }
+            });
+
+            checkInteractionsAndStockAlerts();
+            updateSlotCalendarLinks();
+        }
+
+        function checkInteractionsAndStockAlerts() {
+            const alertBox = document.getElementById('interaction-alert');
+            const alertText = document.getElementById('alert-text');
+            const alertAffZone = document.getElementById('alert-affiliate-zone');
+            let warnings = [];
+            let dangerItems = [];
+
+            const names = myRoutine.map(i => i.name);
+            if ((names.includes('칼슘') || names.includes('Calcium')) && (names.includes('철분') || names.includes('Iron'))) {
+                const c = myRoutine.find(i => i.name === '칼슘' || i.name === 'Calcium');
+                const f = myRoutine.find(i => i.name === '철분' || i.name === 'Iron');
+                if (c && f && c.time === f.time) {
+                    warnings.push(`[복용 주의] 칼슘과 철분이 동일 시간대에 적재되었습니다. 두 성분은 흡수 경로가 겹쳐 동시 섭취 시 효율이 떨어집니다.`);
+                }
+            }
+
+            myRoutine.forEach(item => { if (item.stock <= 7) dangerItems.push(item); });
+            if (dangerItems.length > 0) warnings.push(i18n[currentLang].reorderMsg);
+
+            if (warnings.length > 0) {
+                alertText.innerHTML = warnings.join('<br><br>');
+                alertBox.style.display = 'flex';
+
+                if (dangerItems.length > 0) {
+                    alertBox.classList.add('danger-alert');
+                    let affHtml = '<div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.3rem;">';
+                    dangerItems.forEach(di => {
+                        if (di.iherbUrl && di.iherbUrl !== '#') {
+                            affHtml += `<a href="${di.iherbUrl}" target="_blank" rel="noopener noreferrer" class="shop-btn iherb" style="padding:0.3rem 0.6rem; font-size:0.75rem; margin:0; width:auto;"><i class="fa-solid fa-leaf"></i> ${di.name} iHerb 긴급 충전</a>`;
+                        }
+                    });
+                    affHtml += '</div>';
+                    alertAffZone.innerHTML = affHtml;
+                    alertAffZone.style.display = 'block';
+                } else {
+                    alertBox.classList.remove('danger-alert');
+                    alertAffZone.style.display = 'none';
+                }
+            } else {
+                alertBox.style.display = 'none';
+                alertBox.classList.remove('danger-alert');
+                alertAffZone.style.display = 'none';
+            }
+        }
+
+        function updateSlotCalendarLinks() {
+            const timeSlots = ['morning', 'noon', 'evening'];
+            const hours = { morning: '08', noon: '13', evening: '20' };
+            const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+
+            timeSlots.forEach(slot => {
+                const btn = document.getElementById(`cal-btn-${slot}`);
+                const subList = myRoutine.filter(i => i.time === slot);
+
+                if (subList.length === 0) {
+                    btn.classList.add('disabled');
+                    btn.href = "#";
+                    return;
+                }
+
+                btn.classList.remove('disabled');
+                let title = "[NutriRoutine]";
+                let bodyText = `■ ${title} ■\n\n`;
+
+                subList.forEach(i => {
+                    const b = i.brand ? `[${i.brand}] ` : '';
+                    const fText = i.food === 'before' ? '식전 공복' : '식후 즉시';
+                    bodyText += `• ${b}${i.name} (${fText}) [잔여:${i.stock}알]\n  - 기능성: ${i.benefit}\n  - 요령: ${i.tip}\n\n`;
+                });
+
+                const baseUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+                const dateParam = `${todayStr}T${hours[slot]}0000/${todayStr}T${hours[slot]}3000`;
+                btn.href = `${baseUrl}&text=${encodeURIComponent(title)}&dates=${dateParam}&details=${encodeURIComponent(bodyText)}&recur=RRULE:FREQ=DAILY`;
+            });
+        }
+
+        function saveLocalStorageData() {
+            localStorage.setItem('myRoutineData', JSON.stringify(myRoutine));
+        }
+
+        function loadLocalStorageData() {
+            const data = localStorage.getItem('myRoutineData');
+            if (data) {
+                try { myRoutine = JSON.parse(data); } catch (e) { myRoutine = []; }
+            }
+        }
+
+        function checkAndResetDailyChecks() {
+            const lastCheckDate = localStorage.getItem('lastRoutineCheckDate');
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (lastCheckDate !== todayStr) {
+                myRoutine = myRoutine.map(item => ({ ...item, takenToday: false }));
+                localStorage.setItem('lastRoutineCheckDate', todayStr);
+                saveLocalStorageData();
+            }
+        }
     </script>
 </body>
 </html>
