@@ -1,793 +1,342 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🐱 CatRoutine Pro - 고양이 맞춤 케어 & 주변 병원</title>
-    <meta name="description" content="고양이 품종, 나이, 중성화 여부에 따라 맞춤형 케어 루틴, 사료 추천, 주변 동물병원까지 한 번에!" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 CatRoutine Pro v2</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #d97706;
-            --primary-light: #fef3c7;
-            --primary-dark: #b45309;
-            --bg-color: #fef9ef;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --warning-color: #fef3c7;
-            --warning-text: #92400e;
-            --danger-color: #fee2e2;
-            --danger-text: #dc2626;
-            --google-blue: #4285f4;
-            --google-dark: #3367d6;
-            --info-bg: #e0f2fe;
-            --info-text: #0369a1;
-            --naver-color: #03c75a;
-            --naver-dark: #029e4a;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', system-ui, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.8; }
-
-        .storage-promo-banner {
-            background-color: var(--info-bg); color: var(--info-text);
-            text-align: center; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 700;
-            border-bottom: 1px solid #bae6fd; display: flex; align-items: center; justify-content: center; gap: 0.8rem; flex-wrap: wrap;
-        }
-        .cloud-btn {
-            background-color: #64748b; color: white; border: none; padding: 0.25rem 0.6rem;
-            border-radius: 4px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; width: auto; margin: 0;
-        }
-        .cloud-btn:hover { background-color: #475569; }
-
-        header { background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 0.8rem 1.5rem; position: sticky; top: 0; z-index: 100; }
-        .header-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.35rem; font-weight: 700; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem; text-decoration: none; }
-        .lang-select { padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background-color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; width: auto; min-width: 80px; }
-
-        main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
-        @media (min-width: 992px) { main { grid-template-columns: 400px 1fr; } }
-
-        .search-section { background-color: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); height: fit-content; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        h2 { font-size: 1.15rem; margin-bottom: 1rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.5rem; }
-        .input-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
-        label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-        select, input, button { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 1rem; outline: none; }
-        select:focus, input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-light); }
-
-        .radio-tile-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .radio-tile-group label { flex: 1; min-width: 60px; text-align: center; background: #fff; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--text-main); font-size: 0.85rem; }
-        .radio-tile-group input[type="radio"] { display: none; }
-        .radio-tile-group input[type="radio"]:checked + label { background-color: var(--primary-light); border-color: var(--primary-color); color: var(--primary-dark); }
-
-        button { background-color: var(--primary-color); color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
-        button:hover { background-color: var(--primary-dark); }
-
-        .recommendation-badge { font-size: 0.75rem; color: var(--primary-color); background-color: var(--primary-light); padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 0.25rem; width: fit-content; margin-top: 0.2rem; }
-
-        .timeline-section { display: flex; flex-direction: column; gap: 1.5rem; }
-        .timeline-slot { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .slot-header { display: flex; align-items: center; justify-content: space-between; font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-light); flex-wrap: wrap; gap: 0.5rem; }
-        .slot-title { display: flex; align-items: center; gap: 0.75rem; }
-        .slot-morning .slot-title { color: #d97706; }
-        .slot-noon .slot-title { color: #2563eb; }
-        .slot-evening .slot-title { color: #4b5563; }
-        .slot-calendar-btn { background-color: var(--google-blue); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.4rem; }
-        .slot-calendar-btn.disabled { background-color: var(--border-color); color: var(--text-muted); pointer-events: none; }
-
-        .routine-list { display: flex; flex-direction: column; gap: 0.75rem; }
-        .routine-card { border: 1px solid var(--border-color); border-radius: 8px; background-color: #fafafa; overflow: hidden; transition: all 0.2s ease; }
-        .routine-card:hover { border-color: var(--primary-color); }
-        .routine-card.taken-today { background-color: #f1f5f9; border-color: var(--border-color); }
-
-        .card-main { padding: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .card-left-section { display: flex; align-items: center; gap: 1rem; flex: 1; }
-        .check-toggle { width: 24px; height: 24px; cursor: pointer; accent-color: var(--primary-color); flex-shrink: 0; }
-        .routine-info { flex: 1; }
-        .routine-info h4 { font-size: 1rem; color: var(--text-main); display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
-        .routine-card.taken-today h4 { text-decoration: line-through; color: var(--text-muted); }
-
-        .badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.72rem; font-weight: 600; border-radius: 4px; }
-        .badge-vaccine { background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-        .badge-deworm { background-color: #fce7f3; color: #9d174d; border: 1px solid #f9a8d4; }
-        .badge-heartworm { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-        .badge-dental { background-color: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
-        .badge-food { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
-
-        .card-controls { display: flex; align-items: center; gap: 0.75rem; }
-        .toggle-icon { color: var(--text-muted); transition: transform 0.2s; padding: 0.5rem; }
-        .routine-card.active .toggle-icon { transform: rotate(180deg); }
-        .delete-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.5rem; font-size: 1rem; width: auto; }
-
-        .card-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease-out; background-color: #ffffff; }
-        .routine-card.active .card-detail { max-height: 600px; border-top: 1px solid var(--border-color); }
-        .detail-content { padding: 1rem; font-size: 0.85rem; color: #495057; display: flex; flex-direction: column; gap: 0.5rem; }
-
-        .empty-msg { color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 2rem 0; }
-
-        .alert-box { background-color: var(--warning-color); color: var(--warning-text); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; border: 1px solid #ffeeba; }
-        .alert-box.danger-alert { background-color: var(--danger-color); color: var(--danger-text); border-color: #fca5a5; }
-        .alert-flex { display: flex; align-items: center; gap: 0.75rem; }
-
-        /* 병원 찾기 섹션 */
-        .vet-section {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-            margin-top: 1rem;
-        }
-        .vet-section h3 {
-            color: var(--primary-dark);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .vet-btn {
-            background-color: var(--naver-color);
-            color: white;
-            border: none;
-            padding: 0.6rem 1rem;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            width: auto;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.95rem;
-        }
-        .vet-btn:hover { background-color: var(--naver-dark); }
-        .vet-btn:disabled { background-color: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
-
-        .vet-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
-        .vet-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.8rem 1rem;
-            background-color: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .vet-item .vet-info { flex: 1; }
-        .vet-item .vet-name { font-weight: 700; color: var(--text-main); }
-        .vet-item .vet-address { font-size: 0.85rem; color: var(--text-muted); }
-        .vet-item .vet-link { color: var(--naver-color); text-decoration: none; font-weight: 600; font-size: 0.85rem; }
-        .vet-item .vet-link:hover { text-decoration: underline; }
-
-        /* 프로필 카드 */
-        .profile-card {
-            background-color: var(--primary-light);
-            border-radius: 12px;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            margin-bottom: 1rem;
-        }
-        .profile-card .cat-emoji { font-size: 2rem; }
-        .profile-card .cat-name { font-size: 1.2rem; font-weight: 700; color: var(--primary-dark); }
-        .profile-card .cat-info { font-size: 0.9rem; color: var(--text-muted); }
-
-        @media (max-width: 991px) {
-            main { margin: 1rem auto; gap: 1.5rem; }
-            .search-section, .timeline-slot { padding: 1rem; border-radius: 8px; }
-            .slot-calendar-btn { width: 100%; justify-content: center; margin-top: 0.5rem; }
-            .card-main { padding: 0.75rem; }
-        }
+        *{margin:0;padding:0;font-family:sans-serif}
+        body{background:#fef9ef;padding:12px}
+        .box{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+        h2{color:#d97706;font-size:1.05rem;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+        label{font-size:0.85rem;font-weight:600;color:#64748b;display:block;margin-top:6px}
+        input,select,button{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;font-size:0.95rem;margin:3px 0;box-sizing:border-box}
+        button{background:#d97706;color:#fff;border:none;font-weight:bold;cursor:pointer}
+        button:hover{background:#b45309}
+        .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;margin-right:4px}
+        .b-vaccine{background:#dbeafe;color:#1e40af}
+        .b-deworm{background:#fce7f3;color:#9d174d}
+        .b-heart{background:#fee2e2;color:#991b1b}
+        .b-dental{background:#e0e7ff;color:#3730a3}
+        .b-food{background:#dcfce7;color:#166534}
+        .b-groom{background:#fef3c7;color:#92400e}
+        .card{background:#fafafa;border:1px solid #eee;border-radius:8px;padding:10px;margin:6px 0}
+        .flex{display:flex;align-items:center;gap:10px}
+        .flex-between{display:flex;justify-content:space-between;align-items:center}
+        .done{opacity:0.5;text-decoration:line-through}
+        .small{font-size:0.8rem;color:#666}
+        .guide-box{background:#f0f9ff;padding:10px;border-radius:8px;border:1px solid #bae6fd;margin-top:6px;font-size:0.85rem}
+        .guide-box strong{color:#0369a1}
+        .food-tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin:2px}
+        .tag-high{background:#fecaca;color:#991b1b}
+        .tag-mid{background:#fde68a;color:#92400e}
+        .tag-low{background:#bbf7d0;color:#166534}
+        .vet-btn{background:#03c75a;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:bold;width:100%}
+        .row{display:flex;gap:8px}
+        .row>*{flex:1}
+        .mt-2{margin-top:8px}
     </style>
 </head>
 <body>
 
-    <div class="storage-promo-banner">
-        <span id="promo-text">💾 로컬 스토리지 모드 (브라우저에 저장)</span>
-        <button id="clear-data-btn" class="cloud-btn"><i class="fa-solid fa-trash-can"></i> 모든 데이터 초기화</button>
+    <h1 style="color:#d97706;font-size:1.4rem;margin-bottom:12px">🐱 CatRoutine Pro v2</h1>
+
+    <!-- ===== 프로필 ===== -->
+    <div class="box">
+        <h2><i class="fa-solid fa-paw"></i> 내 고양이</h2>
+        <div id="profileDisplay" style="display:none;background:#fef3c7;padding:10px;border-radius:8px;margin-bottom:10px">
+            <span id="pName" style="font-weight:bold;font-size:1.1rem">냥이</span>
+            <span id="pInfo" class="small">품종 · 12개월 · 중성화안함</span>
+        </div>
+        <input id="catName" placeholder="이름" value="나비">
+        <select id="catBreed">
+            <option>코리안숏헤어</option><option>샴</option><option>페르시안</option>
+            <option>러시안블루</option><option>스코티시폴드</option><option>메인쿤</option><option>기타</option>
+        </select>
+        <input id="catAge" type="number" placeholder="나이(개월)" value="12">
+        <select id="neutered"><option value="no">❌ 중성화 안 함</option><option value="yes">✅ 중성화 완료</option></select>
+        <button onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> 프로필 저장</button>
     </div>
 
-    <header>
-        <div class="header-container">
-            <a href="#" class="logo" id="logo-text"><i class="fa-solid fa-cat"></i> CatRoutine Pro</a>
-            <select class="lang-select" id="lang-switcher">
-                <option value="ko" selected>KO</option>
-                <option value="en">EN</option>
-            </select>
-        </div>
-    </header>
+    <!-- ===== 사료 추천 ===== -->
+    <div class="box" id="foodBox">
+        <h2><i class="fa-solid fa-bowl-food"></i> 사료 추천</h2>
+        <div id="foodContent"><p class="small">🐱 프로필을 저장해주세요</p></div>
+    </div>
 
-    <main>
-        <!-- 왼쪽: 프로필 입력 및 루틴 추가 -->
-        <section style="display: flex; flex-direction: column; gap: 1rem;">
-            <div class="search-section">
-                <h2><i class="fa-solid fa-paw"></i> 내 고양이 프로필</h2>
+    <!-- ===== 케어 추가 ===== -->
+    <div class="box">
+        <h2><i class="fa-solid fa-sliders"></i> 케어 추가</h2>
+        <select id="careSelect" onchange="showGuide()">
+            <option value="">-- 선택 --</option>
+            <option value="종합백신" data-time="morning" data-badge="백신" data-cls="b-vaccine">종합백신</option>
+            <option value="광견병" data-time="morning" data-badge="백신" data-cls="b-vaccine">광견병 백신</option>
+            <option value="구충제" data-time="morning" data-badge="구충" data-cls="b-deworm">구충제 (내부/외부)</option>
+            <option value="심장사상충" data-time="morning" data-badge="심장" data-cls="b-heart">심장사상충 예방약</option>
+            <option value="치아관리" data-time="evening" data-badge="치아" data-cls="b-dental">치아 관리 (칫솔질)</option>
+            <option value="이도청소" data-time="evening" data-badge="치아" data-cls="b-dental">이도 청소</option>
+            <option value="목욕" data-time="evening" data-badge="미용" data-cls="b-groom">목욕 / 그루밍</option>
+            <option value="영양제" data-time="morning" data-badge="영양" data-cls="b-food">영양제 (오메가3/유산균)</option>
+        </select>
+        <div id="guideBox" class="guide-box" style="display:none"></div>
+        <select id="careInterval">
+            <option>매일</option><option>1주일</option><option>2주일</option>
+            <option>1개월</option><option>3개월</option><option>6개월</option><option>1년</option>
+        </select>
+        <input id="careMemo" placeholder="메모 (선택)">
+        <button onclick="addRoutine()"><i class="fa-solid fa-plus"></i> 추가</button>
+    </div>
 
-                <!-- 프로필 표시 영역 -->
-                <div id="profile-display" class="profile-card" style="display:none;">
-                    <div style="display:flex; align-items:center; gap:1rem;">
-                        <span class="cat-emoji" id="profile-emoji">🐱</span>
-                        <div>
-                            <div class="cat-name" id="profile-name">냥이</div>
-                            <div class="cat-info" id="profile-info">품종 · 24개월 · 중성화 안 함</div>
-                        </div>
-                    </div>
-                </div>
+    <!-- ===== 루틴 목록 ===== -->
+    <div id="routineList"></div>
 
-                <div class="input-group">
-                    <label>고양이 이름</label>
-                    <input type="text" id="cat-name" placeholder="예: 나비, 초코" value="나비">
-                </div>
+    <!-- ===== 주변 병원 ===== -->
+    <div class="box">
+        <h2><i class="fa-solid fa-hospital"></i> 주변 병원</h2>
+        <button class="vet-btn" onclick="findVet()"><i class="fa-solid fa-location-dot"></i> 내 주변 병원 찾기</button>
+        <div id="vetResult" class="small" style="margin-top:8px"></div>
+    </div>
 
-                <div class="input-group">
-                    <label>품종</label>
-                    <select id="cat-breed">
-                        <option value="코리안숏헤어">코리안숏헤어 (한국고양이)</option>
-                        <option value="샴">샴</option>
-                        <option value="페르시안">페르시안</option>
-                        <option value="러시안블루">러시안블루</option>
-                        <option value="스코티시폴드">스코티시폴드</option>
-                        <option value="노르웨이숲">노르웨이숲</option>
-                        <option value="메인쿤">메인쿤</option>
-                        <option value="래그돌">래그돌</option>
-                        <option value="아비시니안">아비시니안</option>
-                        <option value="벵갈">벵갈</option>
-                        <option value="스핑크스">스핑크스</option>
-                        <option value="터키시앙고라">터키시앙고라</option>
-                        <option value="기타">기타 (직접 입력)</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label>나이 (개월)</label>
-                    <input type="number" id="cat-age" placeholder="예: 12" min="1" value="12">
-                </div>
-
-                <div class="input-group">
-                    <label>중성화 여부</label>
-                    <div class="radio-tile-group">
-                        <input type="radio" id="neutered-yes" name="neutered" value="yes">
-                        <label for="neutered-yes">✅ 했어요</label>
-                        <input type="radio" id="neutered-no" name="neutered" value="no" checked>
-                        <label for="neutered-no">❌ 안 했어요</label>
-                    </div>
-                </div>
-
-                <button id="save-profile-btn"><i class="fa-solid fa-floppy-disk"></i> 프로필 저장</button>
-
-                <hr style="margin: 1rem 0; border-color: var(--border-color);">
-
-                <h2><i class="fa-solid fa-sliders"></i> 케어 루틴 추가</h2>
-
-                <div class="input-group">
-                    <label>케어 항목</label>
-                    <select id="care-select">
-                        <option value="" id="opt-default">-- 항목을 선택하세요 --</option>
-                        <option value="종합백신" data-time="morning" data-category="vaccine" data-badge="백신">종합백신 (3종/4종/5종)</option>
-                        <option value="광견병백신" data-time="morning" data-category="vaccine" data-badge="백신">광견병 백신</option>
-                        <option value="구충제" data-time="morning" data-category="deworm" data-badge="구충">구충제 (내부/외부)</option>
-                        <option value="심장사상충약" data-time="morning" data-category="heartworm" data-badge="심장사상충">심장사상충 예방약</option>
-                        <option value="치아관리" data-time="evening" data-category="dental" data-badge="치아">치아 관리 (칫솔질/치약)</option>
-                        <option value="이도청소" data-time="evening" data-category="dental" data-badge="치아">이도 청소</option>
-                        <option value="목욕" data-time="evening" data-category="grooming" data-badge="미용">목욕 / 그루밍</option>
-                        <option value="영양제" data-time="morning" data-category="food" data-badge="영양">영양제 (오메가3/유산균 등)</option>
-                    </select>
-                    <div id="recommend-guide-box"></div>
-                </div>
-
-                <div class="input-group">
-                    <label>주기</label>
-                    <select id="care-interval">
-                        <option value="1일">매일</option>
-                        <option value="7일">1주일에 한 번</option>
-                        <option value="14일">2주에 한 번</option>
-                        <option value="30일">한 달에 한 번</option>
-                        <option value="90일">3개월에 한 번</option>
-                        <option value="180일">6개월에 한 번</option>
-                        <option value="365일">1년에 한 번</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label>메모 (선택)</label>
-                    <input type="text" id="care-memo" placeholder="예: 오전 9시에 먹이기">
-                </div>
-
-                <button id="add-btn"><i class="fa-solid fa-square-plus"></i> 루틴에 추가</button>
-            </div>
-
-            <!-- 사료/간식 추천 섹션 -->
-            <div class="search-section">
-                <h2><i class="fa-solid fa-bowl-food"></i> 사료 & 간식 추천</h2>
-                <div id="food-recommendation" style="font-size:0.95rem; line-height:1.8;">
-                    <p style="color: var(--text-muted);">🐱 먼저 고양이 프로필을 저장해주세요.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- 오른쪽: 타임라인 + 주변 병원 -->
-        <section class="timeline-section">
-            <div class="alert-box" id="interaction-alert">
-                <div class="alert-flex">
-                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.2rem;"></i>
-                    <div id="alert-text"></div>
-                </div>
-            </div>
-
-            <div class="timeline-slot slot-morning">
-                <div class="slot-header">
-                    <div class="slot-title" id="title-m"><i class="fa-solid fa-sun"></i> 아침 루틴</div>
-                    <a href="#" id="cal-btn-morning" class="slot-calendar-btn disabled" target="_blank"><i class="fa-brands fa-google"></i> 구글 캘린더 등록</a>
-                </div>
-                <div class="routine-list" id="list-morning"><div class="empty-msg">등록된 루틴이 없습니다.</div></div>
-            </div>
-
-            <div class="timeline-slot slot-noon">
-                <div class="slot-header">
-                    <div class="slot-title" id="title-n"><i class="fa-solid fa-cloud-sun"></i> 점심 루틴</div>
-                    <a href="#" id="cal-btn-noon" class="slot-calendar-btn disabled" target="_blank"><i class="fa-brands fa-google"></i> 구글 캘린더 등록</a>
-                </div>
-                <div class="routine-list" id="list-noon"><div class="empty-msg">등록된 루틴이 없습니다.</div></div>
-            </div>
-
-            <div class="timeline-slot slot-evening">
-                <div class="slot-header">
-                    <div class="slot-title" id="title-e"><i class="fa-solid fa-moon"></i> 저녁 루틴</div>
-                    <a href="#" id="cal-btn-evening" class="slot-calendar-btn disabled" target="_blank"><i class="fa-brands fa-google"></i> 구글 캘린더 등록</a>
-                </div>
-                <div class="routine-list" id="list-evening"><div class="empty-msg">등록된 루틴이 없습니다.</div></div>
-            </div>
-
-            <!-- 주변 동물병원 찾기 -->
-            <div class="vet-section">
-                <h3><i class="fa-solid fa-hospital"></i> 주변 동물병원 찾기</h3>
-                <p style="color: var(--text-muted); font-size:0.9rem; margin-bottom:0.8rem;">
-                    현재 위치를 기반으로 가까운 동물병원을 찾아드립니다.
-                </p>
-                <button id="find-vet-btn" class="vet-btn"><i class="fa-solid fa-location-dot"></i> 내 주변 병원 찾기</button>
-                <div id="vet-list" class="vet-list"></div>
-                <div id="vet-status" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted);"></div>
-            </div>
-        </section>
-    </main>
+    <button onclick="clearAll()" style="background:#ef4444"><i class="fa-solid fa-trash"></i> 전체 초기화</button>
 
     <script>
-        // ========== i18n ==========
-        const i18n = {
-            ko: {
-                logoText: "<i class='fa-solid fa-cat'></i> CatRoutine Pro",
-                empty: "등록된 루틴이 없습니다.",
-                confirmDelete: "정말 삭제하시겠습니까?",
-                clearDataConfirm: "모든 데이터를 정말 초기화하시겠습니까? 되돌릴 수 없습니다.",
-                alertDuplicate: "이미 동일한 항목이 등록되어 있습니다.",
-                alertInput: "항목을 선택해주세요.",
-            },
-            en: {
-                logoText: "<i class='fa-solid fa-cat'></i> CatRoutine Pro",
-                empty: "No routines registered.",
-                confirmDelete: "Are you sure you want to delete?",
-                clearDataConfirm: "Are you sure you want to clear all data? This cannot be undone.",
-                alertDuplicate: "This item is already registered.",
-                alertInput: "Please select an item.",
-            }
+        // ===== 데이터 =====
+        let routines = [];
+        let profile = null;
+
+        // ===== 케어 주기 가이드 =====
+        const careGuide = {
+            '종합백신': { base: '1년', note: '첫 접종 후 1년마다 추가 접종 권장' },
+            '광견병': { base: '1년', note: '법정 필수 접종, 매년 갱신' },
+            '구충제': { base: '3개월', note: '실내묘는 3~6개월, 실외묘는 1~3개월 간격' },
+            '심장사상충': { base: '1개월', note: '모기 활동기(5~11월) 매월 투여, 겨울엔 생략 가능' },
+            '치아관리': { base: '매일', note: '이가 쌓이면 치주염 위험, 매일 칫솔질 권장' },
+            '이도청소': { base: '1주일', note: '귀지가 많은 품종(스핑크스, 페르시안)은 주 2회' },
+            '목욕': { base: '1개월', note: '장모종은 1~2개월, 단모종은 2~3개월 간격' },
+            '영양제': { base: '매일', note: '오메가3는 피부/관절에, 유산균은 장 건강에 도움' }
         };
 
-        let currentLang = 'ko';
-        let myRoutine = [];
-        let catProfile = null;
-
-        // DOM
-        const selectEl = document.getElementById('care-select');
-        const addBtn = document.getElementById('add-btn');
-        const guideBox = document.getElementById('recommend-guide-box');
-        const langSwitcher = document.getElementById('lang-switcher');
-        const clearDataBtn = document.getElementById('clear-data-btn');
-
-        // 프로필 관련
-        const catName = document.getElementById('cat-name');
-        const catBreed = document.getElementById('cat-breed');
-        const catAge = document.getElementById('cat-age');
-        const neuteredYes = document.getElementById('neutered-yes');
-        const neuteredNo = document.getElementById('neutered-no');
-        const saveProfileBtn = document.getElementById('save-profile-btn');
-        const profileDisplay = document.getElementById('profile-display');
-        const profileName = document.getElementById('profile-name');
-        const profileInfo = document.getElementById('profile-info');
-        const profileEmoji = document.getElementById('profile-emoji');
-        const foodRecommendation = document.getElementById('food-recommendation');
-
-        // 병원 찾기
-        const findVetBtn = document.getElementById('find-vet-btn');
-        const vetList = document.getElementById('vet-list');
-        const vetStatus = document.getElementById('vet-status');
-
-        // ========== 초기화 ==========
-        window.addEventListener('DOMContentLoaded', () => {
-            loadLocalStorageData();
-            applyLanguage();
-            updateUI();
-            updateProfileUI();
-            updateFoodRecommendation();
-        });
-
-        // ========== 언어 ==========
-        langSwitcher.addEventListener('change', (e) => {
-            currentLang = e.target.value;
-            applyLanguage();
-            updateUI();
-        });
-
-        function applyLanguage() {
-            const data = i18n[currentLang];
-            document.getElementById('logo-text').innerHTML = data.logoText;
+        function showGuide() {
+            const sel = document.getElementById('careSelect');
+            const box = document.getElementById('guideBox');
+            const val = sel.value;
+            if (!val || !careGuide[val]) { box.style.display = 'none'; return; }
+            const info = careGuide[val];
+            const age = profile ? profile.age : 0;
+            let extra = '';
+            if (val === '종합백신' && age > 84) extra = '시니어묘는 항체가 확인 후 접종 권장';
+            if (val === '구충제' && age < 6) extra = '키튼은 2주 간격으로 2~3회 구충 필요';
+            box.innerHTML = `
+                <strong>📌 권장 주기: ${info.base}</strong>
+                <div>${info.note}</div>
+                ${extra ? `<div style="color:#dc2626;font-weight:bold">⚠️ ${extra}</div>` : ''}
+                ${profile && profile.neutered && val === '영양제' ? '💡 중성화묘는 체중 관리용 영양제 고려' : ''}
+            `;
+            box.style.display = 'block';
         }
 
-        // ========== 프로필 저장 ==========
-        saveProfileBtn.addEventListener('click', () => {
-            catProfile = {
-                name: catName.value.trim() || '냥이',
-                breed: catBreed.value,
-                age: parseInt(catAge.value) || 12,
-                neutered: document.querySelector('input[name="neutered"]:checked').value === 'yes'
+        // ===== 프로필 =====
+        function saveProfile() {
+            profile = {
+                name: document.getElementById('catName').value || '냥이',
+                breed: document.getElementById('catBreed').value,
+                age: parseInt(document.getElementById('catAge').value) || 12,
+                neutered: document.getElementById('neutered').value === 'yes'
             };
-            saveLocalStorageData();
-            updateProfileUI();
-            updateFoodRecommendation();
-            updateUI();
-            alert('✅ 프로필이 저장되었습니다!');
-        });
-
-        function updateProfileUI() {
-            if (catProfile) {
-                profileDisplay.style.display = 'block';
-                profileName.textContent = catProfile.name;
-                const neuteredText = catProfile.neutered ? '중성화 완료' : '중성화 안 함';
-                profileInfo.textContent = `${catProfile.breed} · ${catProfile.age}개월 · ${neuteredText}`;
-                profileEmoji.textContent = catProfile.neutered ? '🐱' : '🐈';
-            } else {
-                profileDisplay.style.display = 'none';
-            }
+            localStorage.setItem('catData', JSON.stringify({ profile, routines }));
+            showProfile();
+            showFood();
+            showGuide();
         }
 
-        // ========== 사료/간식 추천 ==========
-        function updateFoodRecommendation() {
-            if (!catProfile) {
-                foodRecommendation.innerHTML = `<p style="color: var(--text-muted);">🐱 먼저 고양이 프로필을 저장해주세요.</p>`;
+        function showProfile() {
+            const d = document.getElementById('profileDisplay');
+            if (profile) {
+                d.style.display = 'block';
+                document.getElementById('pName').textContent = profile.name;
+                document.getElementById('pInfo').textContent = `${profile.breed} · ${profile.age}개월 · ${profile.neutered?'중성화완료':'중성화안함'}`;
+            } else d.style.display = 'none';
+        }
+
+        // ===== 사료 추천 =====
+        function showFood() {
+            const box = document.getElementById('foodContent');
+            if (!profile) {
+                box.innerHTML = '<p class="small">🐱 프로필을 저장해주세요</p>';
                 return;
             }
+            const { age, neutered, breed } = profile;
 
-            const { age, neutered, breed } = catProfile;
-            let lifeStage = '어덜트 (성묘)';
-            let foodType = '성묘용 사료';
-            let brandRecommend = '로얄캐닌, 힐즈, 오리젠, 아카나';
-            let nutritionTip = '단백질 35% 이상, 지방 15~20%';
+            // 생애주기
+            let stage = '어덜트 (성묘)';
+            if (age < 6) stage = '키튼 (2~6개월)';
+            else if (age < 12) stage = '주니어 (7~12개월)';
+            else if (age >= 84) stage = '시니어 (7년 이상)';
 
-            if (age < 6) {
-                lifeStage = '키튼 (2~6개월)';
-                foodType = '키튼용 사료 (성장기)';
-                brandRecommend = '로얄캐닌 키튼, 힐즈 사이언스 다이어트 키튼, 오리젠 키튼';
-                nutritionTip = '단백질 40% 이상, DHA/EPA 함유';
-            } else if (age < 12) {
-                lifeStage = '주니어 (7~12개월)';
-                foodType = '주니어용 사료 (성장 마무리)';
-                brandRecommend = '로얄캐닌 주니어, 힐즈 주니어, 아카나 주니어';
-                nutritionTip = '단백질 38% 이상, 칼슘/인 비율 조절';
-            } else if (age >= 84) {
-                lifeStage = '시니어 (7년 이상)';
-                foodType = '시니어용 사료 (노령묘)';
-                brandRecommend = '로얄캐닌 시니어, 힐즈 시니어, 오리젠 시니어';
-                nutritionTip = '단백질 30~35%, 글루코사민/콘드로이틴 함유';
-            }
+            // 가격대별 브랜드
+            const brands = {
+                high: { name: '오리젠, 아카나, 노르딕내추럴', tag: '고가 (1kg 3만원~)' },
+                mid: { name: '로얄캐닌, 힐즈, 이즈칸', tag: '중가 (1kg 1.5~2.5만원)' },
+                low: { name: '닥터바이오, 네추럴코어, 애니모나', tag: '저가 (1kg 1만원 이하)' }
+            };
 
-            if (neutered) {
-                foodType += ' (중성화묘 맞춤)';
-                nutritionTip += ', 중성화묘는 체중 관리용 사료 추천';
-                brandRecommend += ', 중성화묘 전용 라인';
-            }
+            // 목적별 추천
+            let purposeGuide = `
+                <div style="margin-top:6px">
+                    <span class="food-tag tag-high">⚖️ 체중관리: 로얄캐닌 라이트, 힐즈 메타볼릭</span>
+                    <span class="food-tag tag-mid">💩 소화건강: 힐즈 i/d, 로얄캐닌 센서티브</span>
+                    <span class="food-tag tag-low">🦷 치아건강: 힐즈 t/d, 로얄캐닌 덴탈</span>
+                    <span class="food-tag tag-high">🐾 관절건강: 오리젠 시니어, 아카나 시니어</span>
+                    <span class="food-tag tag-mid">🌿 털/피부: 오리젠 식스피쉬, 아카나 퍼시픽</span>
+                </div>
+            `;
 
-            // 품종별 추가 팁
+            // 품종 특이사항
             let breedTip = '';
-            if (breed === '페르시안' || breed === '스코티시폴드') {
-                breedTip = '💡 이 품종은 털 관리와 치아 건강에 특히 신경 써야 해요. 헤어볼 케어 사료를 고려해보세요.';
-            } else if (breed === '메인쿤' || breed === '노르웨이숲') {
-                breedTip = '💡 대형묘 품종이에요. 관절 건강을 위해 글루코사민이 포함된 사료를 추천해요.';
-            } else if (breed === '샴' || breed === '아비시니안') {
-                breedTip = '💡 활동량이 많은 품종이에요. 고단백, 고에너지 사료가 좋아요.';
-            }
+            if (breed === '페르시안' || breed === '스코티시폴드') breedTip = '💡 헤어볼 케어 사료 + 오메가3 보충 추천';
+            else if (breed === '메인쿤') breedTip = '💡 대형묘, 관절 건강에 글루코사민 함유 사료 추천';
+            else if (breed === '샴' || breed === '아비시니안') breedTip = '💡 활동량↑, 고단백 고에너지 사료 추천';
 
-            foodRecommendation.innerHTML = `
-                <div style="background: var(--primary-light); padding:1rem; border-radius:8px; border:1px solid var(--border-color);">
-                    <p><strong>🐱 ${catProfile.name}님의 맞춤 사료 추천</strong></p>
-                    <p>📌 생애주기: <strong>${lifeStage}</strong></p>
-                    <p>🍖 추천 사료 유형: <strong>${foodType}</strong></p>
-                    <p>🏷️ 추천 브랜드: <strong>${brandRecommend}</strong></p>
-                    <p>📊 영양 성분: <strong>${nutritionTip}</strong></p>
-                    ${breedTip ? `<p style="margin-top:0.5rem;">${breedTip}</p>` : ''}
-                    <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted);">
-                        ⚠️ 사료 변경 시 1주일간 기존 사료와 혼합하여 급여하세요.
-                    </p>
+            box.innerHTML = `
+                <div style="background:#fef3c7;padding:12px;border-radius:8px">
+                    <p><strong>🐱 ${profile.name}님의 맞춤 사료</strong></p>
+                    <p>📌 생애주기: <strong>${stage}</strong></p>
+                    <p>${neutered ? '✅ 중성화 완료 → 체중 관리형 사료 권장' : '❌ 중성화 전 → 일반 성묘용 사료'}</p>
                 </div>
-                <div style="margin-top:0.8rem; background:#f0fdf4; padding:0.8rem; border-radius:8px; border:1px solid #86efac;">
-                    <p><strong>🫐 간식 추천</strong></p>
-                    <p>• 동결건조 간식 (닭가슴살/연어) - 단백질 보충</p>
-                    <p>• 캣닢/실버바인 - 스트레스 해소</p>
-                    <p>• 덴탈 간식 - 치아 건강</p>
-                    <p style="font-size:0.85rem; color:var(--text-muted);">⚠️ 간식은 하루 총 칼로리의 10% 이내로 급여하세요.</p>
+
+                <div style="margin-top:8px">
+                    <p><strong>💰 가격대별 추천 브랜드</strong></p>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+                        <span class="food-tag tag-high">${brands.high.name}</span>
+                        <span class="food-tag tag-mid">${brands.mid.name}</span>
+                        <span class="food-tag tag-low">${brands.low.name}</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:8px;background:#f0fdf4;padding:10px;border-radius:8px;border:1px solid #86efac">
+                    <p><strong>🎯 목적별 추천</strong></p>
+                    ${purposeGuide}
+                </div>
+
+                ${breedTip ? `<div style="margin-top:6px;background:#fef9c3;padding:8px;border-radius:6px;font-size:0.85rem">${breedTip}</div>` : ''}
+
+                <div style="margin-top:6px;font-size:0.8rem;color:#64748b">
+                    ⚠️ 사료 변경 시 7일간 기존 사료와 혼합 급여
                 </div>
             `;
         }
 
-        // ========== 루틴 추가 ==========
-        addBtn.addEventListener('click', () => {
-            if (!catProfile) {
-                alert('고양이 프로필을 먼저 저장해주세요!');
-                return;
-            }
-
-            let name = "";
-            let time = document.querySelector('input[name="routine-time"]:checked')?.value || 'morning';
-            let category = "";
-            let badge = "";
-            let interval = document.getElementById('care-interval').value;
-            let memo = document.getElementById('care-memo').value.trim();
-
-            if (selectEl.value !== "") {
-                const opt = selectEl.options[selectEl.selectedIndex];
-                name = opt.value;
-                category = opt.getAttribute('data-category') || 'care';
-                badge = opt.getAttribute('data-badge') || '케어';
-                // time은 data-time 속성 오버라이드
-                if (opt.getAttribute('data-time')) {
-                    time = opt.getAttribute('data-time');
-                }
-            } else {
-                alert(i18n[currentLang].alertInput);
-                return;
-            }
-
-            if (myRoutine.some(item => item.name === name && item.time === time)) {
-                alert(i18n[currentLang].alertDuplicate);
-                return;
-            }
-
-            const newItem = {
+        // ===== 루틴 추가 =====
+        function addRoutine() {
+            if (!profile) { alert('프로필 먼저 저장!'); return; }
+            const sel = document.getElementById('careSelect');
+            if (!sel.value) return alert('항목 선택!');
+            const opt = sel.options[sel.selectedIndex];
+            const item = {
                 id: Date.now(),
-                name,
-                time,
-                category,
-                badge,
-                interval,
-                memo,
-                takenToday: false,
-                active: false
+                name: sel.value,
+                time: opt.dataset.time || 'morning',
+                badge: opt.dataset.badge || '케어',
+                cls: opt.dataset.cls || 'b-vaccine',
+                interval: document.getElementById('careInterval').value,
+                memo: document.getElementById('careMemo').value,
+                done: false
             };
-            myRoutine.push(newItem);
+            routines.push(item);
+            localStorage.setItem('catData', JSON.stringify({ profile, routines }));
+            render();
+            document.getElementById('careMemo').value = '';
+        }
 
-            saveLocalStorageData();
-            updateUI();
+        function toggleDone(id) {
+            const item = routines.find(r => r.id === id);
+            if (item) item.done = !item.done;
+            localStorage.setItem('catData', JSON.stringify({ profile, routines }));
+            render();
+        }
 
-            selectEl.value = "";
-            document.getElementById('care-memo').value = "";
-            guideBox.innerHTML = '';
-        });
+        function deleteItem(id) {
+            if (!confirm('삭제?')) return;
+            routines = routines.filter(r => r.id !== id);
+            localStorage.setItem('catData', JSON.stringify({ profile, routines }));
+            render();
+        }
 
-        // ========== 삭제 / 토글 / 완료 ==========
-        window.deleteItem = function(id, event) {
-            event.stopPropagation();
-            if (!confirm(i18n[currentLang].confirmDelete)) return;
-            myRoutine = myRoutine.filter(item => item.id !== id);
-            saveLocalStorageData();
-            updateUI();
-        };
-
-        window.toggleCard = function(id) {
-            myRoutine = myRoutine.map(item =>
-                item.id === id ? { ...item, active: !item.active } : item
-            );
-            updateUI();
-        };
-
-        window.toggleTakeComplete = function(id, event) {
-            event.stopPropagation();
-            myRoutine = myRoutine.map(item =>
-                item.id === id ? { ...item, takenToday: !item.takenToday } : item
-            );
-            saveLocalStorageData();
-            updateUI();
-        };
-
-        // ========== UI 렌더링 ==========
-        function updateUI() {
-            const slots = {
-                morning: document.getElementById('list-morning'),
-                noon: document.getElementById('list-noon'),
-                evening: document.getElementById('list-evening')
-            };
-
-            Object.keys(slots).forEach(key => slots[key].innerHTML = "");
-
-            myRoutine.forEach(item => {
-                const card = document.createElement('div');
-                card.className = `routine-card ${item.active ? 'active' : ''} ${item.takenToday ? 'taken-today' : ''}`;
-
-                const badgeClass = {
-                    'vaccine': 'badge-vaccine',
-                    'deworm': 'badge-deworm',
-                    'heartworm': 'badge-heartworm',
-                    'dental': 'badge-dental',
-                    'food': 'badge-food',
-                    'grooming': 'badge-food'
-                }[item.category] || 'badge-food';
-
-                const badgeHtml = `<span class="badge ${badgeClass}">${item.badge || '케어'}</span>`;
-
-                card.innerHTML = `
-                    <div class="card-main" onclick="toggleCard(${item.id})">
-                        <div class="card-left-section">
-                            <input type="checkbox" class="check-toggle" ${item.takenToday ? 'checked' : ''} onclick="toggleTakeComplete(${item.id}, event)">
-                            <div class="routine-info">
-                                <h4>${badgeHtml} ${item.name} <span style="font-size:0.75rem; color:var(--text-muted);">(${item.interval})</span></h4>
+        function render() {
+            const container = document.getElementById('routineList');
+            const slots = { morning: [], noon: [], evening: [] };
+            routines.forEach(r => {
+                if (slots[r.time]) slots[r.time].push(r);
+                else slots.morning.push(r);
+            });
+            let html = '';
+            for (const [time, items] of Object.entries(slots)) {
+                const label = time === 'morning' ? '☀️ 아침' : time === 'noon' ? '⛅ 점심' : '🌙 저녁';
+                html += `<div class="box"><h2>${label}</h2>`;
+                if (items.length === 0) html += `<p class="small">등록된 루틴 없음</p>`;
+                items.forEach(r => {
+                    html += `
+                        <div class="card ${r.done?'done':''}">
+                            <div class="flex-between">
+                                <div class="flex">
+                                    <input type="checkbox" ${r.done?'checked':''} onchange="toggleDone(${r.id})">
+                                    <span><span class="badge ${r.cls}">${r.badge}</span> ${r.name} <span class="small">(${r.interval})</span></span>
+                                </div>
+                                <button onclick="deleteItem(${r.id})" style="background:none;color:#ef4444;border:none;width:auto;padding:4px;font-size:1.2rem"><i class="fa-solid fa-xmark"></i></button>
                             </div>
+                            ${r.memo ? `<div class="small">📝 ${r.memo}</div>` : ''}
                         </div>
-                        <div class="card-controls">
-                            <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                            <button class="delete-btn" onclick="deleteItem(${item.id}, event)"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </div>
-                    <div class="card-detail">
-                        <div class="detail-content">
-                            <p>📋 <strong>주기:</strong> ${item.interval}</p>
-                            ${item.memo ? `<p>📝 <strong>메모:</strong> ${item.memo}</p>` : ''}
-                            <p style="font-size:0.8rem; color:var(--text-muted);">마지막 수행: ${item.takenToday ? '✅ 오늘 완료' : '⏳ 오늘 미완료'}</p>
-                        </div>
-                    </div>
-                `;
-                slots[item.time].appendChild(card);
-            });
-
-            Object.keys(slots).forEach(key => {
-                if (slots[key].children.length === 0) {
-                    slots[key].innerHTML = `<div class="empty-msg">${i18n[currentLang].empty}</div>`;
-                }
-            });
-
-            updateSlotCalendarLinks();
-        }
-
-        // ========== 구글 캘린더 ==========
-        function updateSlotCalendarLinks() {
-            const timeSlots = ['morning', 'noon', 'evening'];
-            const hours = { morning: '08', noon: '13', evening: '20' };
-            const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-
-            timeSlots.forEach(slot => {
-                const btn = document.getElementById(`cal-btn-${slot}`);
-                const subList = myRoutine.filter(i => i.time === slot);
-
-                if (subList.length === 0 || !catProfile) {
-                    btn.classList.add('disabled');
-                    btn.href = "#";
-                    return;
-                }
-
-                btn.classList.remove('disabled');
-                let title = `[CatRoutine] ${catProfile.name} 케어`;
-                let bodyText = `🐱 ${catProfile.name}의 ${slot} 케어 루틴\n\n`;
-
-                subList.forEach(i => {
-                    bodyText += `• ${i.name} (${i.interval})\n`;
-                    if (i.memo) bodyText += `  - ${i.memo}\n`;
+                    `;
                 });
-
-                const baseUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
-                const dateParam = `${todayStr}T${hours[slot]}0000/${todayStr}T${hours[slot]}3000`;
-                btn.href = `${baseUrl}&text=${encodeURIComponent(title)}&dates=${dateParam}&details=${encodeURIComponent(bodyText)}&recur=RRULE:FREQ=DAILY`;
-            });
+                html += `</div>`;
+            }
+            container.innerHTML = html || `<div class="box"><p class="small">등록된 루틴이 없습니다</p></div>`;
         }
 
-        // ========== 주변 동물병원 찾기 (네이버 지도) ==========
-        findVetBtn.addEventListener('click', () => {
+        // ===== 병원 찾기 =====
+        function findVet() {
+            const result = document.getElementById('vetResult');
             if (!navigator.geolocation) {
-                vetStatus.textContent = '❌ 이 브라우저는 위치 정보를 지원하지 않습니다.';
+                result.textContent = '❌ 위치 지원 안함';
                 return;
             }
-
-            vetStatus.textContent = '📍 현재 위치를 확인 중입니다...';
-            findVetBtn.disabled = true;
-
+            result.textContent = '📍 위치 확인 중...';
             navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    vetStatus.textContent = `✅ 위치 확인 완료 (위도: ${latitude.toFixed(4)}, 경도: ${longitude.toFixed(4)})`;
-                    searchNearbyVets(latitude, longitude);
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    const url = `https://map.naver.com/p/search/동물병원?c=15.00,0,0,0,dh&lng=${longitude}&lat=${latitude}`;
+                    result.innerHTML = `<a href="${url}" target="_blank" style="color:#03c75a;font-weight:bold;font-size:1rem">🐾 네이버 지도에서 주변 병원 보기</a>`;
                 },
-                (error) => {
-                    vetStatus.textContent = `❌ 위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.`;
-                    findVetBtn.disabled = false;
-                    console.error('Geolocation error:', error);
-                }
+                () => { result.textContent = '❌ 위치 권한 필요 (설정에서 허용)'; }
             );
-        });
-
-        function searchNearbyVets(lat, lng) {
-            // 네이버 지도 API로 검색하는 대신, 네이버 지도 앱/웹으로 연결
-            // 모바일은 네이버 지도 앱, PC는 웹으로 연결
-            const naverMapUrl = `https://map.naver.com/p/search/동물병원?c=15.00,0,0,0,dh&lng=${lng}&lat=${lat}`;
-            
-            // 간단한 목록 표시 (실제로는 API 호출이지만, 여기선 네이버 지도 링크 제공)
-            vetList.innerHTML = `
-                <div class="vet-item">
-                    <div class="vet-info">
-                        <div class="vet-name">🐾 네이버 지도에서 주변 동물병원 검색</div>
-                        <div class="vet-address">현재 위치 기준으로 가까운 병원을 찾아드려요</div>
-                    </div>
-                    <a href="${naverMapUrl}" target="_blank" class="vet-link">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 지도 열기
-                    </a>
-                </div>
-                <div style="text-align:center; padding:0.5rem; font-size:0.85rem; color:var(--text-muted);">
-                    <p>📱 모바일에서 열면 네이버 지도 앱으로 연결됩니다.</p>
-                    <p>💡 검색어: <strong>"동물병원"</strong> 또는 <strong>"24시 동물병원"</strong></p>
-                </div>
-            `;
-            findVetBtn.disabled = false;
-            vetStatus.textContent = '✅ 네이버 지도에서 주변 병원을 확인하세요!';
         }
 
-        // ========== 로컬스토리지 ==========
-        function saveLocalStorageData() {
-            localStorage.setItem('catRoutineData', JSON.stringify({
-                routines: myRoutine,
-                profile: catProfile
-            }));
+        // ===== 초기화 =====
+        function clearAll() {
+            if (!confirm('모든 데이터 초기화?')) return;
+            routines = [];
+            profile = null;
+            localStorage.removeItem('catData');
+            showProfile();
+            showFood();
+            render();
+            document.getElementById('vetResult').innerHTML = '';
+            document.getElementById('guideBox').style.display = 'none';
         }
 
-        function loadLocalStorageData() {
-            const data = localStorage.getItem('catRoutineData');
-            if (data) {
-                try {
-                    const parsed = JSON.parse(data);
-                    myRoutine = parsed.routines || [];
-                    catProfile = parsed.profile || null;
-                } catch (e) {
-                    myRoutine = [];
-                    catProfile = null;
-                }
-            }
+        // ===== 로드 =====
+        const saved = localStorage.getItem('catData');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                profile = data.profile || null;
+                routines = data.routines || [];
+            } catch(e) {}
         }
-
-        // ========== 데이터 초기화 ==========
-        clearDataBtn.addEventListener('click', () => {
-            if (confirm(i18n[currentLang].clearDataConfirm)) {
-                myRoutine = [];
-                catProfile = null;
-                localStorage.removeItem('catRoutineData');
-                updateUI();
-                updateProfileUI();
-                updateFoodRecommendation();
-                vetList.innerHTML = '';
-                vetStatus.textContent = '';
-            }
-        });
-
-        // ========== 셀렉트 변경 시 가이드 ==========
-        selectEl.addEventListener('change', () => {
-            if (selectEl.value !== "") {
-                const opt = selectEl.options[selectEl.selectedIndex];
-                const category = opt.getAttribute('data-category') || '';
-                const badge = opt.getAttribute('data-badge') || '';
-                let guideText = `📌 ${badge} 항목입니다. `;
-                if (category === 'vaccine') guideText += '접종 일정은 수의사와 상담 후 조정하세요.';
-                else if (category === 'heartworm') guideText += '매월 정기적인 투여가 중요합니다.';
-                else if (category === 'dental') guideText += '매일 꾸준히 해주는 것이 좋아요.';
-                else if (category === 'deworm') guideText += '3~6개월 주기가 일반적이에요.';
-                guideBox.innerHTML = `<div class="recommendation-badge"><i class="fa-solid fa-info-circle"></i> ${guideText}</div>`;
-            } else {
-                guideBox.innerHTML = '';
-            }
-        });
-
-        console.log('🐱 CatRoutine Pro - 고양이 맞춤 케어 & 주변 병원 찾기');
+        showProfile();
+        showFood();
+        render();
     </script>
 </body>
 </html>
